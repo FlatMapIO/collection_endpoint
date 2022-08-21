@@ -28,7 +28,7 @@ func TestBuildQueryInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, total, err := info.BuildSQL()
+	data, total, err := info.GenerateSQL()
 	if err != nil {
 		t.Fatal(err)
 	}

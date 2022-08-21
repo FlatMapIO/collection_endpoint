@@ -86,11 +86,11 @@ func (q *QueryInfo) verify() error {
 	return nil
 }
 
-func (q *QueryInfo) BuildSQL() (data, total string, err error) {
+func (q *QueryInfo) GenerateSQL(table string) (data, total string, err error) {
 	sqlb := strings.Builder{}
 
 	sqlb.WriteString("select " + strings.Join(q.fields, ", "))
-	sqlb.WriteString(" from " + q.spec.Table)
+	sqlb.WriteString(" from " + table)
 	sqlb.WriteString(" where 1 = 1")
 
 	if len(q.filter) > 0 {
@@ -130,6 +130,6 @@ func (q *QueryInfo) BuildSQL() (data, total string, err error) {
 		jsonObjectArgs = append(jsonObjectArgs, "'"+field+"'")
 		jsonObjectArgs = append(jsonObjectArgs, "t."+field)
 	}
-	data = `select json_arrayagg(json_object(` + strings.Join(jsonObjectArgs, ", ") + `)) as data from (` + sqlb.String() + `) as t group by 1`
+	data = `select json_agg(json_build_object(` + strings.Join(jsonObjectArgs, ", ") + `)) as data from (` + sqlb.String() + `) as t group by 1`
 	return
 }

@@ -1,23 +1,11 @@
-/*
-docker run -d \
-    --name mysql \
-    -p 3306:3306 \
-    --user 1000:1000 \
-    -e MYSQL_ROOT_PASSWORD=sa \
-    -e MYSQL_PASSWORD=sa \
-    -e MYSQL_USER=sa \
-    -e MYSQL_DATABASE=test \
-    mysql:8
-*/
-
-
 drop table if exists t_user;
 create table t_user
 (
-    id         int      not null auto_increment,
-    name       text     not null,
-    created_at datetime not null default now(),
-    primary key pk_id (id)
+    id         serial      not null,
+    name       text        not null,
+    created_at timestamptz not null default now(),
+
+    constraint t_user_pkey primary key (id)
 )
 ;
 
@@ -33,10 +21,10 @@ values ('test1', '2012-01-01 00:00:00')
 drop table if exists t_order;;
 create table t_order
 (
-    id         int          not null auto_increment,
-    amount     int unsigned not null default 0,
-    created_at datetime     not null default now(),
-    primary key pk_id (id)
+    id         serial      not null,
+    amount     int         not null default 0,
+    created_at timestamptz not null default now(),
+    constraint t_order_pkey primary key (id)
 )
 ;
 
@@ -55,7 +43,7 @@ create table t_user_order
 
     user_id  int not null,
     order_id int not null,
-    primary key pk_user_order (user_id, order_id)
+    constraint t_user_order_pkey primary key (user_id, order_id)
 )
 ;
 
@@ -73,8 +61,8 @@ create view user_order_view as
 (
 select u.id   as user_id
      , u.name as user_name
-     , json_arrayagg(
-        json_object('order_id', o.id
+     , json_agg(
+        json_build_object('order_id', o.id
             , 'order_amount', o.amount
             , 'order_created_at', o.created_at)
     )         as orders
@@ -87,17 +75,14 @@ group by u.id
 ;
 
 
-with r1 as (select *
-            from user_order_view v)
-select count(*) as count
-     , json_arrayagg(json_object(
-        'user_id', r1.user_id
-    , 'user_name', r1.user_name
-    , 'orders', r1.orders
-    ))          as data
-from r1
-group by null
+select json_agg(
+               json_build_object('user_id', v.user_id,
+                                 'user_name', v.user_name,
+                                 'orders', v.orders)
+           )
+from user_order_view v;
 ;
+
 
 -- with meta
 select count(*)
@@ -112,37 +97,3 @@ with r1 as (select user_id
 select json_object('count', count(*))
 from r1
 ;
-
-
-select json_arrayagg(json_object('id', t.id, 'name', t.name, 'created_at', t.created_at)) as data
-from (select id, name, created_at from sample where 1 = 1 order by name asc, created_at asc limit 10) as t
-group by 1
-;
-
--- types
-
-create table types_test
-(
-    id         int      not null auto_increment,
-    name       text     not null,
-    created_at datetime not null default now(),
-    primary key pk_id (id)
-)
-;
-insert into types_test (name)
-values ('admin')
-     , ('guest')
-;
-
-select *
-from types_test
-where 1 = 1
-  and created_at between '2022-08-01' and '2022-08-19'
-;
-select *
-from types_test
-where 1 = 1
-  and id between 1 and 2
-order by id desc
-       , name
-       , created_at desc

@@ -1,10 +1,5 @@
 package collection_endpoint
 
-import (
-	"database/sql"
-	"errors"
-)
-
 type OP string
 
 const (
@@ -32,11 +27,9 @@ type FilterSpec struct {
 
 type DefaultQuery map[string]string
 type QuerySpec struct {
-	Database *sql.DB
-	Table    string
-	Default  DefaultQuery
-	Fields   []string
-	Sorts    []string
+	Default DefaultQuery
+	Fields  []string
+	Sorts   []string
 
 	Limit  LimitSpec
 	Filter map[string]FilterSpec
@@ -49,12 +42,6 @@ type QuerySpec struct {
 func (q *QuerySpec) complete() error {
 	if q.completed {
 		return nil
-	}
-	if q.Database == nil {
-		return errors.New("Databas is required")
-	}
-	if q.Table == "" {
-		return errors.New("table is required")
 	}
 	q.sortsSet = newKeySet(q.Sorts)
 	q.fieldsSet = newKeySet(q.Fields)

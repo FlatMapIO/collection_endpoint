@@ -16,26 +16,51 @@ func TestExample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	endpoint, err := ce.NewCollectionEndpoint(ce.QuerySpec{
-		Database: db,
-		Table:    "userdata",
-		Default: ce.DefaultQuery{
-			"limit":               "10",
-			"created_at[between]": `('2020-01-01', '2020-01-31')`,
-		},
-		Fields: []string{
-			"id", "name", "created_at",
-		},
-		Sorts: []string{
-			"id", "name", "created_at",
-		},
-		Limit: ce.LimitByMin1Max100,
-	})
+	endpoint, err := ce.NewCollectionEndpoint(db, "t_user",
+		ce.QuerySpec{
+			Default: ce.DefaultQuery{
+				"limit":               "10",
+				"created_at[between]": `('2020-01-01', '2020-01-31')`,
+			},
+			Fields: []string{
+				"id", "name", "created_at",
+			},
+			Sorts: []string{
+				"id", "name", "created_at",
+			},
+			Filter: map[string]ce.FilterSpec{
+				"id": {
+					Operators: []ce.OP{
+						ce.OP_EQ,
+						ce.OP_NE,
+					},
+				},
+				"name": {
+					Operators: []ce.OP{
+						ce.OP_EQ,
+						ce.OP_NE,
+						ce.OP_LIKE,
+					},
+				},
+				"created_at": {
+					Operators: []ce.OP{
+						ce.OP_EQ,
+						ce.OP_NE,
+						ce.OP_GT,
+						ce.OP_GE,
+						ce.OP_LT,
+						ce.OP_LE,
+						ce.OP_BETWEEN,
+					},
+				},
+			},
+			Limit: ce.LimitByMin1Max100,
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
 	router := chi.NewRouter()
-	router.Get("/users", endpoint.Handler())
+	router.Get("/users", endpoint.ServeHTTP)
 
 	server := httptest.NewServer(router)
 	defer server.Close()
